@@ -111,7 +111,47 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user = {
+        "name": session.get("user_name", "Aditi Sharma"),
+        "email": "aditi.sharma@example.com",
+        "created_at": "2024-11-03",
+    }
+    initials = "".join(part[0].upper() for part in user["name"].split()[:2])
+
+    expenses = [
+        {"date": "2026-09-24", "description": "Swiggy dinner order", "category": "Food", "amount": 640},
+        {"date": "2026-09-22", "description": "Ola cab to airport", "category": "Transport", "amount": 890},
+        {"date": "2026-09-20", "description": "Electricity bill", "category": "Bills", "amount": 2150},
+        {"date": "2026-09-18", "description": "Pharmacy purchase", "category": "Health", "amount": 480},
+        {"date": "2026-09-15", "description": "Movie tickets - PVR", "category": "Entertainment", "amount": 720},
+        {"date": "2026-09-12", "description": "Myntra order", "category": "Shopping", "amount": 1899},
+    ]
+
+    stats = {
+        "total_spent": sum(expense["amount"] for expense in expenses),
+        "transaction_count": len(expenses),
+        "top_category": "Food",
+    }
+
+    category_breakdown = [
+        {"category": "Food", "total": 6420, "percent": 38},
+        {"category": "Bills", "total": 4300, "percent": 26},
+        {"category": "Shopping", "total": 3100, "percent": 19},
+        {"category": "Transport", "total": 1780, "percent": 11},
+        {"category": "Entertainment", "total": 990, "percent": 6},
+    ]
+
+    return render_template(
+        "profile.html",
+        user=user,
+        initials=initials,
+        expenses=expenses,
+        stats=stats,
+        category_breakdown=category_breakdown,
+    )
 
 
 @app.route("/expenses/add")
