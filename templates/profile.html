@@ -15,14 +15,39 @@
             <div class="profile-user-meta">
                 <h1 class="profile-name">{{ user.name }}</h1>
                 <p class="profile-email">{{ user.email }}</p>
-                <p class="profile-since">Member since {{ user.created_at }}</p>
+                <p class="profile-since">Member since {{ user.created_at[:10] }}</p>
             </div>
+        </div>
+
+        <div class="profile-card filter-bar">
+            <nav class="filter-presets" aria-label="Date range presets">
+                {% for preset in presets %}
+                <a href="{{ url_for('profile', date_from=preset.date_from, date_to=preset.date_to) }}"
+                   class="filter-preset{% if active_filter == preset.key %} is-active{% endif %}"
+                   {% if active_filter == preset.key %}aria-current="page"{% endif %}>{{ preset.label }}</a>
+                {% endfor %}
+            </nav>
+            <form class="filter-custom{% if active_filter == 'custom' %} is-active{% endif %}"
+                  method="get" action="{{ url_for('profile') }}">
+                <label class="filter-field">
+                    <span>From</span>
+                    <input type="date" name="date_from" value="{{ date_from or '' }}" required>
+                </label>
+                <label class="filter-field">
+                    <span>To</span>
+                    <input type="date" name="date_to" value="{{ date_to or '' }}" required>
+                </label>
+                <button type="submit" class="filter-apply">Apply</button>
+            </form>
+            {% if filter_error %}
+            <p class="filter-error" role="alert">{{ filter_error }}</p>
+            {% endif %}
         </div>
 
         <div class="stat-grid">
             <div class="profile-card stat-tile">
                 <span class="stat-label">Total spent</span>
-                <span class="stat-value">₹{{ "{:,}".format(stats.total_spent) }}</span>
+                <span class="stat-value">{{ stats.total_spent|inr }}</span>
             </div>
             <div class="profile-card stat-tile">
                 <span class="stat-label">Transactions</span>
@@ -30,12 +55,15 @@
             </div>
             <div class="profile-card stat-tile">
                 <span class="stat-label">Top category</span>
-                <span class="stat-value">{{ stats.top_category }}</span>
+                <span class="stat-value">{{ stats.top_category or "—" }}</span>
             </div>
         </div>
 
         <div class="profile-card">
             <h2 class="profile-card-title">Recent transactions</h2>
+            {% if expenses|length == transaction_limit %}
+            <p class="table-note">Showing the latest {{ transaction_limit }} transactions in this period.</p>
+            {% endif %}
             <div class="table-scroll">
                 <table class="expense-table">
                     <thead>
@@ -52,7 +80,11 @@
                             <td>{{ expense.date }}</td>
                             <td>{{ expense.description }}</td>
                             <td><span class="badge badge-{{ expense.category|lower }}">{{ expense.category }}</span></td>
-                            <td class="col-amount">₹{{ "{:,}".format(expense.amount) }}</td>
+                            <td class="col-amount">{{ expense.amount|inr }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="empty-state">No transactions in this period.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -69,8 +101,10 @@
                     <div class="cat-bar-track">
                         <div class="cat-bar-fill cat-bar-{{ entry.category|lower }}" style="width: {{ entry.percent }}%;"></div>
                     </div>
-                    <span class="cat-bar-amt">₹{{ "{:,}".format(entry.total) }}</span>
+                    <span class="cat-bar-amt">{{ entry.total|inr }}</span>
                 </div>
+                {% else %}
+                <p class="empty-state">No spending in this period.</p>
                 {% endfor %}
             </div>
         </div>
